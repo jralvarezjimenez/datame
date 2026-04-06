@@ -1,0 +1,38 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "System user (Veterinarian, Staff, or Pet Owner)",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "description": "User email" },
+        "role": { "type": "string", "enum": ["veterinarian", "staff", "owner"], "description": "User role" },
+        "clinicId": { "type": "string", "description": "ID of the clinic they belong to" }
+      },
+      "required": ["email", "role"]
+    },
+    "Patient": {
+      "title": "Patient",
+      "description": "A pet patient",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Pet's name" },
+        "species": { "type": "string", "description": "Species (dog, cat, etc.)" },
+        "breed": { "type": "string", "description": "Breed" },
+        "age": { "type": "number", "description": "Age in years" },
+        "ownerId": { "type": "string", "description": "Reference to the owner (User ID)" }
+      },
+      "required": ["name", "species", "ownerId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Collection of users and their roles"
+    },
+    "/patients/{patientId}": {
+      "schema": "Patient",
+      "description": "Collection of patients"
+    }
+  }
+}
