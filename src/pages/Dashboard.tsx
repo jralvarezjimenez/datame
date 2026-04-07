@@ -1,18 +1,29 @@
 import { useState, useEffect } from 'react';
 import { Plus, Calendar, UserPlus, Syringe, Users, ChevronRight, PawPrint } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { getAllPatients, getPatientsByOwner, type Patient } from '../services/patients';
+import { Onboarding } from '../components/Onboarding';
 
 export function Dashboard() {
   const { user, isVetOrStaff } = useAuth();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     const load = async () => {
       try {
+        // Check if onboarding is needed
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const userData = userDoc.data();
+        if (!userData?.onboardingComplete) {
+          setShowOnboarding(true);
+        }
+
         const data = isVetOrStaff ? await getAllPatients() : await getPatientsByOwner(user.uid);
         setPatients(data);
       } catch (err) {
@@ -152,6 +163,8 @@ export function Dashboard() {
           </section>
         </aside>
       </div>
+
+      {showOnboarding && <Onboarding onComplete={() => setShowOnboarding(false)} />}
     </div>
   );
 }
