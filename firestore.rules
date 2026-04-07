@@ -74,5 +74,10 @@ service cloud.firestore {
       allow update: if isAuthenticated();
       allow delete: if isVeterinarianOrStaff();
     }
+
+    match /inventory/{docId} {
+      allow read: if isVeterinarianOrStaff();
+      allow create, update, delete: if isVeterinarianOrStaff();
+    }
   }
 }

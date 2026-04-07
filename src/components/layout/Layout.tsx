@@ -11,6 +11,7 @@ export function Layout() {
     if (location.pathname.startsWith('/patients')) return { title: 'Pacientes' };
     if (location.pathname.startsWith('/agenda')) return { title: 'Agenda' };
     if (location.pathname.startsWith('/alerts')) return { title: 'Alertas' };
+    if (location.pathname.startsWith('/inventory')) return { title: 'Inventario' };
     if (location.pathname.startsWith('/portal')) return { title: 'Portal' };
     return { title: 'DATA ME' };
   };
