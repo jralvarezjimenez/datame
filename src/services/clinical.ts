@@ -10,7 +10,18 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
-// --- Consultations ---
+// --- Consultations (SOAP Format - Ley 576/2000 Colombia) ---
+export interface VitalSigns {
+  weight?: number;           // kg
+  temperature?: number;      // °C
+  heartRate?: number;        // lpm
+  respiratoryRate?: number;  // rpm
+  mucousMembranes?: string;  // rosadas, pálidas, cianóticas, ictéricas
+  capillaryRefillTime?: number; // segundos
+  bodyCondition?: number;    // 1-9 scale
+  hydration?: string;        // normal, leve, moderada, severa
+}
+
 export interface Consultation {
   id: string;
   patientId: string;
@@ -18,8 +29,18 @@ export interface Consultation {
   vetName: string;
   date: string;
   reason: string;
-  diagnosis: string;
-  treatment: string;
+
+  // SOAP Fields
+  subjective: string;     // S: History from owner - symptoms, duration, behavior changes
+  objective: string;      // O: Physical exam findings, vital signs, lab results
+  assessment: string;     // A: Diagnosis / differential diagnoses
+  plan: string;           // P: Treatment plan, medications, follow-up
+
+  vitals?: VitalSigns;
+
+  // Legacy compatibility
+  diagnosis: string;      // Maps to Assessment
+  treatment: string;      // Maps to Plan
   notes?: string;
   createdAt?: Timestamp;
 }
