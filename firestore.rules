@@ -79,5 +79,12 @@ service cloud.firestore {
       allow read: if isVeterinarianOrStaff();
       allow create, update, delete: if isVeterinarianOrStaff();
     }
+
+    match /clinics/{clinicId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
+    }
   }
 }

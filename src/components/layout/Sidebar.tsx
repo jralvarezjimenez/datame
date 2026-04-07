@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Calendar, Bell, Package, UserCircle, LogOut, PawPrint } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, Bell, Package, UserCircle, Settings, LogOut, PawPrint } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -9,6 +9,7 @@ const navItems = [
   { icon: Calendar, label: 'Agenda', path: '/agenda' },
   { icon: Bell, label: 'Alertas', path: '/alerts' },
   { icon: Package, label: 'Inventario', path: '/inventory' },
+  { icon: Settings, label: 'Ajustes', path: '/settings' },
   { icon: UserCircle, label: 'Portal', path: '/portal' },
 ];
 
