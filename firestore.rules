@@ -48,5 +48,24 @@ service cloud.firestore {
       allow update: if isVeterinarianOrStaff() || (isAuthenticated() && resource.data.ownerId == request.auth.uid && request.resource.data.ownerId == resource.data.ownerId);
       allow delete: if isVeterinarianOrStaff();
     }
+
+    // Clinical records: vet/staff have full access, owners can read their pet's records
+    match /consultations/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isVeterinarianOrStaff();
+    }
+
+    match /vaccinations/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isVeterinarianOrStaff();
+    }
+
+    match /prescriptions/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isVeterinarianOrStaff();
+    }
   }
 }

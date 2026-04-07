@@ -1,11 +1,18 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, Navigate } from 'react-router-dom';
 import { PawPrint, Mail, Lock } from 'lucide-react';
 import { signInWithPopup } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../firebase';
+import { useAuth } from '../contexts/AuthContext';
 
 export function Login() {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
+
+  // If already logged in, redirect to dashboard
+  if (!loading && user) {
+    return <Navigate to="/" replace />;
+  }
 
   const handleGoogleLogin = async () => {
     try {

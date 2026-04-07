@@ -1,212 +1,175 @@
-import { Search, Plus, Calendar, UserPlus, DollarSign, Syringe, ChevronRight, FileText, FlaskConical, Pill } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Calendar, UserPlus, Syringe, Users, ChevronRight, PawPrint } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { getAllPatients, getPatientsByOwner, type Patient } from '../services/patients';
 
 export function Dashboard() {
+  const { user, isVetOrStaff } = useAuth();
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    const load = async () => {
+      try {
+        const data = isVetOrStaff ? await getAllPatients() : await getPatientsByOwner(user.uid);
+        setPatients(data);
+      } catch (err) {
+        console.error('Error loading dashboard:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [user, isVetOrStaff]);
+
+  const activeCount = patients.filter((p) => p.status === 'active').length;
+  const speciesCount = new Set(patients.map((p) => p.species)).size;
+  const recentPatients = patients.slice(0, 5);
+
   return (
     <div className="p-6 space-y-8 max-w-7xl mx-auto">
-      {/* Welcome Section */}
+      {/* Welcome */}
       <section className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-extrabold text-on-surface font-headline tracking-tight">Buenos días, Julian</h2>
-          <p className="text-on-surface-variant font-medium mt-1">Tienes 12 citas programadas para hoy.</p>
+          <h2 className="text-3xl font-extrabold text-on-surface font-headline tracking-tight">
+            Hola, {user?.displayName?.split(' ')[0] || 'Doctor'}
+          </h2>
+          <p className="text-on-surface-variant font-medium mt-1">
+            {loading ? 'Cargando datos...' : `Tienes ${patients.length} pacientes registrados.`}
+          </p>
         </div>
         <div className="flex gap-3">
-          <button className="bg-surface-container-lowest text-primary border border-primary/20 px-4 py-2.5 rounded-lg flex items-center gap-2 text-sm font-bold shadow-sm hover:bg-primary/5 transition-all active:scale-95">
-            <Search className="w-5 h-5" />
-            Buscar Paciente
-          </button>
-          <button className="bg-primary text-on-primary px-5 py-2.5 rounded-lg flex items-center gap-2 text-sm font-bold shadow-md shadow-primary/20 hover:bg-primary-container transition-all active:scale-95">
+          <Link
+            to="/patients"
+            className="bg-surface-container-lowest text-primary border border-primary/20 px-4 py-2.5 rounded-lg flex items-center gap-2 text-sm font-bold shadow-sm hover:bg-primary/5 transition-all active:scale-95"
+          >
+            <Users className="w-5 h-5" />
+            Ver Pacientes
+          </Link>
+          <Link
+            to="/patients"
+            className="bg-primary text-on-primary px-5 py-2.5 rounded-lg flex items-center gap-2 text-sm font-bold shadow-md shadow-primary/20 hover:bg-primary-container transition-all active:scale-95"
+          >
             <Plus className="w-5 h-5" />
-            Nueva Cita
-          </button>
+            Nuevo Paciente
+          </Link>
         </div>
       </section>
 
-      {/* Bento Summary Grid */}
+      {/* Stats */}
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Card: Appointments */}
-        <div className="bg-surface-container-lowest p-6 rounded-xl flex flex-col justify-between h-40 shadow-sm transition-all hover:shadow-md border border-transparent hover:border-outline-variant/20">
-          <div className="flex justify-between items-start">
-            <div className="p-2 bg-primary/10 rounded-lg text-primary">
-              <Calendar className="w-6 h-6" />
-            </div>
-            <span className="text-[10px] font-bold text-primary px-2 py-1 bg-primary/10 rounded-full">HOY</span>
-          </div>
-          <div>
-            <p className="text-3xl font-extrabold text-on-surface">12</p>
-            <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mt-1">Citas de Hoy</p>
-          </div>
-        </div>
-
-        {/* Card: New Patients */}
-        <div className="bg-surface-container-lowest p-6 rounded-xl flex flex-col justify-between h-40 shadow-sm transition-all hover:shadow-md border border-transparent hover:border-outline-variant/20">
-          <div className="flex justify-between items-start">
-            <div className="p-2 bg-secondary/10 rounded-lg text-secondary">
-              <UserPlus className="w-6 h-6" />
-            </div>
-            <span className="text-[10px] font-bold text-secondary px-2 py-1 bg-secondary/10 rounded-full">+18%</span>
-          </div>
-          <div>
-            <p className="text-3xl font-extrabold text-on-surface">24</p>
-            <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mt-1">Nuevos Pacientes (Semana)</p>
-          </div>
-        </div>
-
-        {/* Card: Monthly Income */}
-        <div className="bg-surface-container-lowest p-6 rounded-xl flex flex-col justify-between h-40 shadow-sm transition-all hover:shadow-md border border-transparent hover:border-outline-variant/20">
-          <div className="flex justify-between items-start">
-            <div className="p-2 bg-tertiary/10 rounded-lg text-tertiary">
-              <DollarSign className="w-6 h-6" />
-            </div>
-            <span className="text-[10px] font-bold text-tertiary px-2 py-1 bg-tertiary/10 rounded-full">ACTIVO</span>
-          </div>
-          <div>
-            <p className="text-3xl font-extrabold text-on-surface">$14,280</p>
-            <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mt-1">Ingresos Mensuales</p>
-          </div>
-        </div>
-
-        {/* Card: Vaccines */}
-        <div className="bg-surface-container-lowest p-6 rounded-xl flex flex-col justify-between h-40 shadow-sm transition-all hover:shadow-md border border-transparent hover:border-outline-variant/20">
-          <div className="flex justify-between items-start">
-            <div className="p-2 bg-error-container/40 rounded-lg text-on-error-container">
-              <Syringe className="w-6 h-6" />
-            </div>
-            <span className="text-[10px] font-bold text-on-error-container px-2 py-1 bg-error-container/40 rounded-full">URGENTE</span>
-          </div>
-          <div>
-            <p className="text-3xl font-extrabold text-on-surface">08</p>
-            <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mt-1">Próximas Vacunas</p>
-          </div>
-        </div>
+        <StatCard icon={PawPrint} label="Total Pacientes" value={loading ? '...' : String(patients.length)} badge="TOTAL" color="primary" />
+        <StatCard icon={UserPlus} label="Pacientes Activos" value={loading ? '...' : String(activeCount)} badge="ACTIVOS" color="secondary" />
+        <StatCard icon={Calendar} label="Especies" value={loading ? '...' : String(speciesCount)} badge="TIPOS" color="tertiary" />
+        <StatCard icon={Syringe} label="Registros Clínicos" value="--" badge="PRÓXIMO" color="error" />
       </section>
 
-      {/* Main Layout: Appointments & Quick Actions */}
+      {/* Recent Patients */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Appointments List */}
         <section className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold text-teal-900 font-headline">Próximas Citas</h3>
-            <a href="#" className="text-sm font-bold text-primary hover:underline">Ver Toda la Agenda</a>
+            <h3 className="text-xl font-bold text-teal-900 font-headline">Pacientes Recientes</h3>
+            <Link to="/patients" className="text-sm font-bold text-primary hover:underline">Ver Todos</Link>
           </div>
-          
-          <div className="space-y-4">
-            {/* Appointment Row 1 */}
-            <div className="group bg-surface-container-lowest p-5 rounded-2xl flex items-center gap-5 shadow-sm hover:shadow-md transition-all border border-transparent hover:border-primary/10 cursor-pointer">
-              <div className="relative">
-                <img src="https://images.unsplash.com/photo-1537151608804-ea6d11540eb1?auto=format&fit=crop&q=80&w=150&h=150" alt="Cooper" className="w-16 h-16 rounded-xl object-cover" />
-                <div className="absolute -bottom-1 -right-1 bg-white p-1 rounded-full shadow-sm">
-                  <span className="w-4 h-4 rounded-full bg-teal-600 flex items-center justify-center text-white text-[10px]">🐾</span>
-                </div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-lg font-bold text-on-surface truncate">Cooper</h4>
-                  <span className="text-sm font-bold text-primary bg-primary/5 px-3 py-1 rounded-full">09:30 AM</span>
-                </div>
-                <p className="text-sm font-medium text-on-surface-variant">Beagle • Chequeo de Rutina</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="w-2 h-2 rounded-full bg-primary"></span>
-                  <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Revisión de Signos Vitales y Peso</span>
-                </div>
-              </div>
-              <ChevronRight className="w-6 h-6 text-slate-400 group-hover:text-primary transition-colors" />
-            </div>
 
-            {/* Appointment Row 2 */}
-            <div className="group bg-surface-container-lowest p-5 rounded-2xl flex items-center gap-5 shadow-sm hover:shadow-md transition-all border border-transparent hover:border-primary/10 cursor-pointer">
-              <div className="relative">
-                <img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&q=80&w=150&h=150" alt="Misty" className="w-16 h-16 rounded-xl object-cover" />
-                <div className="absolute -bottom-1 -right-1 bg-white p-1 rounded-full shadow-sm">
-                  <span className="w-4 h-4 rounded-full bg-orange-600 flex items-center justify-center text-white text-[10px]">🐱</span>
-                </div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-lg font-bold text-on-surface truncate">Misty</h4>
-                  <span className="text-sm font-bold text-on-surface-variant bg-slate-100 px-3 py-1 rounded-full">10:15 AM</span>
-                </div>
-                <p className="text-sm font-medium text-on-surface-variant">Gato Doméstico • Vacunación</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="w-2 h-2 rounded-full bg-tertiary"></span>
-                  <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Refuerzo Anual de Rabia</span>
-                </div>
-              </div>
-              <ChevronRight className="w-6 h-6 text-slate-400 group-hover:text-primary transition-colors" />
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
             </div>
-
-            {/* Appointment Row 3 */}
-            <div className="group bg-surface-container-lowest p-5 rounded-2xl flex items-center gap-5 shadow-sm hover:shadow-md transition-all border border-transparent hover:border-primary/10 cursor-pointer">
-              <div className="relative">
-                <img src="https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&q=80&w=150&h=150" alt="Luna" className="w-16 h-16 rounded-xl object-cover" />
-                <div className="absolute -bottom-1 -right-1 bg-white p-1 rounded-full shadow-sm">
-                  <span className="w-4 h-4 rounded-full bg-teal-600 flex items-center justify-center text-white text-[10px]">🐾</span>
-                </div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-lg font-bold text-on-surface truncate">Luna</h4>
-                  <span className="text-sm font-bold text-on-surface-variant bg-slate-100 px-3 py-1 rounded-full">11:00 AM</span>
-                </div>
-                <p className="text-sm font-medium text-on-surface-variant">Golden Retriever • Revisión Post-Cirugía</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="w-2 h-2 rounded-full bg-secondary"></span>
-                  <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Retiro de Puntos</span>
-                </div>
-              </div>
-              <ChevronRight className="w-6 h-6 text-slate-400 group-hover:text-primary transition-colors" />
+          ) : recentPatients.length === 0 ? (
+            <div className="bg-surface-container-lowest p-12 rounded-2xl text-center">
+              <PawPrint className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+              <p className="text-slate-500 font-medium">No hay pacientes aún</p>
+              <Link to="/patients" className="text-primary font-bold text-sm hover:underline mt-2 inline-block">Registrar el primero</Link>
             </div>
-          </div>
+          ) : (
+            <div className="space-y-4">
+              {recentPatients.map((patient) => (
+                <Link
+                  key={patient.id}
+                  to={`/patients/${patient.id}`}
+                  className="group bg-surface-container-lowest p-5 rounded-2xl flex items-center gap-5 shadow-sm hover:shadow-md transition-all border border-transparent hover:border-primary/10"
+                >
+                  <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold text-xl overflow-hidden">
+                    {patient.imageUrl ? (
+                      <img src={patient.imageUrl} alt={patient.name} className="w-full h-full object-cover" />
+                    ) : (
+                      patient.name.charAt(0)
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-lg font-bold text-on-surface truncate">{patient.name}</h4>
+                      <span className={`text-[10px] font-black px-3 py-1 rounded-full ${
+                        patient.status === 'active'
+                          ? 'text-teal-800 bg-teal-50'
+                          : 'text-slate-500 bg-slate-50'
+                      }`}>
+                        {patient.status === 'active' ? 'ACTIVO' : 'INACTIVO'}
+                      </span>
+                    </div>
+                    <p className="text-sm font-medium text-on-surface-variant">{patient.species} • {patient.breed}</p>
+                    <p className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest mt-1">
+                      Propietario: {patient.ownerName}
+                    </p>
+                  </div>
+                  <ChevronRight className="w-6 h-6 text-slate-400 group-hover:text-primary transition-colors" />
+                </Link>
+              ))}
+            </div>
+          )}
         </section>
 
-        {/* Sidebar Actions / Mini Stats */}
+        {/* Quick Info */}
         <aside className="space-y-8">
-          {/* Quick Actions Section */}
           <section className="bg-primary-container/20 p-6 rounded-2xl border border-primary/10">
             <h3 className="text-lg font-bold text-teal-900 mb-4 font-headline">Acciones Rápidas</h3>
             <div className="space-y-3">
-              <button className="w-full bg-white text-primary px-4 py-3 rounded-xl flex items-center gap-3 text-sm font-bold shadow-sm hover:shadow-md transition-all">
-                <FileText className="w-5 h-5" />
-                Nuevo Historial Clínico
-              </button>
-              <button className="w-full bg-white text-on-surface px-4 py-3 rounded-xl flex items-center gap-3 text-sm font-bold shadow-sm hover:shadow-md transition-all">
-                <FlaskConical className="w-5 h-5 text-secondary" />
-                Solicitar Prueba de Laboratorio
-              </button>
-              <button className="w-full bg-white text-on-surface px-4 py-3 rounded-xl flex items-center gap-3 text-sm font-bold shadow-sm hover:shadow-md transition-all">
-                <Pill className="w-5 h-5 text-tertiary" />
-                Emitir Receta
-              </button>
+              <Link to="/patients" className="w-full bg-white text-primary px-4 py-3 rounded-xl flex items-center gap-3 text-sm font-bold shadow-sm hover:shadow-md transition-all">
+                <PawPrint className="w-5 h-5" />
+                Gestionar Pacientes
+              </Link>
+              <Link to="/agenda" className="w-full bg-white text-on-surface px-4 py-3 rounded-xl flex items-center gap-3 text-sm font-bold shadow-sm hover:shadow-md transition-all">
+                <Calendar className="w-5 h-5 text-secondary" />
+                Ver Agenda
+              </Link>
             </div>
           </section>
 
-          {/* Care Team Status */}
-          <section className="bg-surface-container-lowest p-6 rounded-2xl shadow-sm space-y-4">
-            <h3 className="text-lg font-bold text-on-surface font-headline">Estado del Equipo Médico</h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs">SV</div>
-                  <span className="text-sm font-medium">Sarah Van (Téc)</span>
-                </div>
-                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">EN LÍNEA</span>
+          <section className="bg-surface-container-lowest p-6 rounded-2xl shadow-sm">
+            <h3 className="text-lg font-bold text-on-surface font-headline mb-3">Tu Rol</h3>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                {user?.displayName?.charAt(0) || '?'}
               </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-secondary/20 flex items-center justify-center text-secondary font-bold text-xs">ML</div>
-                  <span className="text-sm font-medium">Mike Low (Admin)</span>
-                </div>
-                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">EN LÍNEA</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-bold text-xs">RR</div>
-                  <span className="text-sm font-medium">Dra. Rosa (Cir)</span>
-                </div>
-                <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded">DESCONECTADO</span>
+              <div>
+                <p className="font-semibold text-sm text-slate-800">{user?.displayName}</p>
+                <p className="text-xs text-slate-500 capitalize">{user?.role === 'veterinarian' ? 'Veterinario' : user?.role === 'staff' ? 'Staff' : 'Propietario'}</p>
               </div>
             </div>
           </section>
         </aside>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ icon: Icon, label, value, badge, color }: {
+  icon: typeof PawPrint; label: string; value: string; badge: string; color: string;
+}) {
+  return (
+    <div className="bg-surface-container-lowest p-6 rounded-xl flex flex-col justify-between h-40 shadow-sm transition-all hover:shadow-md border border-transparent hover:border-outline-variant/20">
+      <div className="flex justify-between items-start">
+        <div className={`p-2 bg-${color}/10 rounded-lg text-${color}`}>
+          <Icon className="w-6 h-6" />
+        </div>
+        <span className={`text-[10px] font-bold text-${color} px-2 py-1 bg-${color}/10 rounded-full`}>{badge}</span>
+      </div>
+      <div>
+        <p className="text-3xl font-extrabold text-on-surface">{value}</p>
+        <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mt-1">{label}</p>
       </div>
     </div>
   );

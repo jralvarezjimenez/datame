@@ -1,210 +1,403 @@
-import { Search, Plus, Calendar, FileText, Table, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect, type FormEvent } from 'react';
+import { Search, Plus, X, PawPrint } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-const patients = [
-  {
-    id: '#VC-2931',
-    name: 'Cooper',
-    species: 'PERRO',
-    breed: 'Golden Retriever',
-    age: '4 Años',
-    owner: 'Sarah Jenkins',
-    lastVisit: '12 Oct, 2023',
-    lastVisitReason: 'Chequeo de Vacunación',
-    status: 'ACTIVO',
-    image: 'https://images.unsplash.com/photo-1537151608804-ea6d11540eb1?auto=format&fit=crop&q=80&w=150&h=150'
-  },
-  {
-    id: '#VC-2932',
-    name: 'Luna',
-    species: 'GATO',
-    breed: 'Siamés',
-    age: '2 Años',
-    owner: 'David Chen',
-    lastVisit: '05 Nov, 2023',
-    lastVisitReason: 'Limpieza Dental',
-    status: 'ACTIVO',
-    image: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&q=80&w=150&h=150'
-  },
-  {
-    id: '#VC-2935',
-    name: 'Spike',
-    species: 'EXÓTICO',
-    breed: 'Iguana Verde',
-    age: '5 Años',
-    owner: 'Mark Thompson',
-    lastVisit: '20 Sep, 2023',
-    lastVisitReason: 'Consulta Nutricional',
-    status: 'INACTIVO',
-    image: 'https://images.unsplash.com/photo-1504450758481-7338eba7524a?auto=format&fit=crop&q=80&w=150&h=150'
-  },
-  {
-    id: '#VC-3011',
-    name: 'Majesty',
-    species: 'EQUINO',
-    breed: 'Caballo Cuarto de Milla',
-    age: '8 Años',
-    owner: 'Oakwood Stables',
-    lastVisit: '01 Dic, 2023',
-    lastVisitReason: 'Examen de Cojera',
-    status: 'ACTIVO',
-    image: 'https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?auto=format&fit=crop&q=80&w=150&h=150'
-  }
-];
+import { useAuth } from '../contexts/AuthContext';
+import { getAllPatients, getPatientsByOwner, createPatient, type Patient, type PatientInput } from '../services/patients';
 
 export function Patients() {
+  const { user, isVetOrStaff } = useAuth();
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [speciesFilter, setSpeciesFilter] = useState('');
+  const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    loadPatients();
+  }, [user]);
+
+  async function loadPatients() {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const data = isVetOrStaff
+        ? await getAllPatients()
+        : await getPatientsByOwner(user.uid);
+      setPatients(data);
+    } catch (err) {
+      console.error('Error loading patients:', err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const filtered = patients.filter((p) => {
+    const matchesSearch =
+      !search ||
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      p.ownerName.toLowerCase().includes(search.toLowerCase()) ||
+      p.breed.toLowerCase().includes(search.toLowerCase());
+    const matchesSpecies = !speciesFilter || p.species.toLowerCase() === speciesFilter.toLowerCase();
+    return matchesSearch && matchesSpecies;
+  });
+
+  const speciesList = [...new Set(patients.map((p) => p.species))];
+
   return (
     <div className="max-w-7xl mx-auto space-y-8 p-6">
-      {/* Action Header: Bento Style Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Search & Filters Container */}
-        <div className="lg:col-span-2 bg-surface-container-lowest rounded-xl p-6 shadow-sm shadow-teal-900/5 border border-outline-variant/15">
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="relative flex-grow">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-              <input 
-                type="text" 
-                placeholder="Buscar por nombre de mascota o propietario..." 
-                className="w-full pl-10 pr-4 py-2.5 bg-surface-container-high border-none rounded-lg focus:ring-2 focus:ring-primary text-sm font-body outline-none transition-all"
-              />
-            </div>
-            <div className="flex gap-2">
-              <button className="flex items-center gap-2 bg-primary text-on-primary px-6 py-2.5 rounded-lg font-headline font-semibold text-sm transition-transform active:scale-95">
-                <Plus className="w-5 h-5" />
-                <span>Nuevo Paciente</span>
-              </button>
-            </div>
+      {/* Header */}
+      <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/15">
+        <div className="flex flex-col md:flex-row gap-4 mb-4">
+          <div className="relative flex-grow">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Buscar por nombre, propietario o raza..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-surface-container-high border-none rounded-lg focus:ring-2 focus:ring-primary text-sm font-body outline-none transition-all"
+            />
           </div>
-          
-          <div className="flex flex-wrap gap-3 items-center">
-            <span className="text-xs font-semibold text-on-surface-variant/70 uppercase tracking-wider">Filtros</span>
-            <div className="flex flex-wrap gap-2">
-              <select className="bg-surface-container-high border-none rounded-full px-4 py-1.5 text-xs font-medium focus:ring-1 focus:ring-primary outline-none cursor-pointer">
-                <option>Especie: Todas</option>
-                <option>Perro</option>
-                <option>Gato</option>
-                <option>Exótico</option>
-                <option>Equino</option>
-              </select>
-              <select className="bg-surface-container-high border-none rounded-full px-4 py-1.5 text-xs font-medium focus:ring-1 focus:ring-primary outline-none cursor-pointer">
-                <option>Estado: Activo</option>
-                <option>Inactivo</option>
-              </select>
-              <div className="relative">
-                <input 
-                  type="text" 
-                  placeholder="Rango de Última Visita" 
-                  className="bg-surface-container-high border-none rounded-full px-4 py-1.5 text-xs font-medium focus:ring-1 focus:ring-primary outline-none w-40"
-                />
-                <Calendar className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-              </div>
-              <button className="text-primary text-xs font-bold hover:underline px-2">Limpiar Todo</button>
-            </div>
-          </div>
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 bg-primary text-on-primary px-6 py-2.5 rounded-lg font-headline font-semibold text-sm transition-transform active:scale-95"
+          >
+            <Plus className="w-5 h-5" />
+            <span>Nuevo Paciente</span>
+          </button>
         </div>
 
-        {/* Export & Quick Stats */}
-        <div className="bg-primary-container text-on-primary-container rounded-xl p-6 shadow-sm shadow-teal-900/10 flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute -right-8 -top-8 w-32 h-32 bg-primary opacity-20 rounded-full blur-3xl"></div>
-          <div className="relative z-10">
-            <h3 className="font-headline text-lg font-bold mb-1">Registros Clínicos</h3>
-            <p className="text-xs opacity-80 mb-6">Gestiona y exporta tu base de datos clínica de pacientes</p>
-          </div>
-          <div className="flex gap-3 relative z-10">
-            <button className="flex-1 flex items-center justify-center gap-2 bg-white/20 backdrop-blur-md hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
-              <FileText className="w-4 h-4" />
-              PDF
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="text-xs font-semibold text-on-surface-variant/70 uppercase tracking-wider">Filtros</span>
+          <select
+            value={speciesFilter}
+            onChange={(e) => setSpeciesFilter(e.target.value)}
+            className="bg-surface-container-high border-none rounded-full px-4 py-1.5 text-xs font-medium focus:ring-1 focus:ring-primary outline-none cursor-pointer"
+          >
+            <option value="">Especie: Todas</option>
+            {speciesList.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+          {(search || speciesFilter) && (
+            <button
+              onClick={() => { setSearch(''); setSpeciesFilter(''); }}
+              className="text-primary text-xs font-bold hover:underline px-2"
+            >
+              Limpiar Todo
             </button>
-            <button className="flex-1 flex items-center justify-center gap-2 bg-white/20 backdrop-blur-md hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
-              <Table className="w-4 h-4" />
-              Excel
-            </button>
-          </div>
+          )}
         </div>
       </div>
 
-      {/* Patient List Table Area */}
+      {/* Patient List */}
       <div className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm border border-outline-variant/10">
-        <div className="overflow-x-auto no-scrollbar">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-surface-container-low text-on-surface-variant">
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest font-headline">Detalle de Mascota</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest font-headline">Especie/Raza</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest font-headline">Edad</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest font-headline">Propietario</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest font-headline">Última Visita</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest font-headline">Estado</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest font-headline text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-outline-variant/10">
-              {patients.map((patient, idx) => (
-                <tr key={idx} className="hover:bg-surface-container transition-colors group">
-                  <td className="px-6 py-5">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden shadow-sm group-hover:scale-105 transition-transform">
-                        <img src={patient.image} alt={patient.name} className="w-full h-full object-cover" />
-                      </div>
-                      <div>
-                        <p className="font-headline font-bold text-teal-900">{patient.name}</p>
-                        <p className="text-[11px] font-medium text-slate-500">ID: {patient.id}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-5">
-                    <div className="flex flex-col">
-                      <span className="px-2 py-0.5 bg-secondary-container/20 text-on-secondary-container rounded text-[10px] font-bold w-fit mb-1">{patient.species}</span>
-                      <span className="text-sm font-medium text-slate-700">{patient.breed}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-5 text-sm text-slate-600 font-medium">{patient.age}</td>
-                  <td className="px-6 py-5 text-sm text-slate-700 font-semibold">{patient.owner}</td>
-                  <td className="px-6 py-5">
-                    <div className="flex flex-col">
-                      <span className="text-sm text-slate-700 font-medium">{patient.lastVisit}</span>
-                      <span className="text-[10px] text-slate-400">{patient.lastVisitReason}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-5">
-                    {patient.status === 'ACTIVO' ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-teal-100 text-teal-800 text-[10px] font-black rounded-full">
-                        <span className="w-1.5 h-1.5 rounded-full bg-teal-600"></span>
-                        ACTIVO
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-container-high text-slate-500 text-[10px] font-black rounded-full">
-                        <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                        INACTIVO
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-5 text-right">
-                    <Link to={`/patients/${patient.id.replace('#', '')}`} className="bg-primary-container/10 hover:bg-primary-container text-primary hover:text-on-primary-container px-4 py-2 rounded-lg text-xs font-bold transition-all inline-block">
-                      Ver Historial
-                    </Link>
-                  </td>
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <PawPrint className="w-16 h-16 text-slate-300 mb-4" />
+            <h3 className="font-headline font-bold text-lg text-slate-600 mb-1">
+              {patients.length === 0 ? 'Sin pacientes registrados' : 'Sin resultados'}
+            </h3>
+            <p className="text-sm text-slate-400 mb-6">
+              {patients.length === 0
+                ? 'Registra tu primer paciente para comenzar'
+                : 'Intenta con otros términos de búsqueda'}
+            </p>
+            {patients.length === 0 && (
+              <button
+                onClick={() => setShowModal(true)}
+                className="bg-primary text-on-primary px-6 py-2.5 rounded-lg font-semibold text-sm"
+              >
+                Registrar Paciente
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-surface-container-low text-on-surface-variant">
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest">Mascota</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest">Especie / Raza</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest">Edad</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest">Propietario</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest">Estado</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-right">Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-outline-variant/10">
+                {filtered.map((patient) => (
+                  <tr key={patient.id} className="hover:bg-surface-container transition-colors group">
+                    <td className="px-6 py-5">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-primary/10 overflow-hidden shadow-sm flex items-center justify-center text-primary font-bold group-hover:scale-105 transition-transform">
+                          {patient.imageUrl ? (
+                            <img src={patient.imageUrl} alt={patient.name} className="w-full h-full object-cover" />
+                          ) : (
+                            patient.name.charAt(0).toUpperCase()
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-headline font-bold text-teal-900">{patient.name}</p>
+                          {patient.sex && (
+                            <p className="text-[11px] font-medium text-slate-500">
+                              {patient.sex === 'male' ? 'Macho' : 'Hembra'}
+                              {patient.neutered ? ' (Esterilizado)' : ''}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <span className="px-2 py-0.5 bg-secondary-container/20 text-on-secondary-container rounded text-[10px] font-bold uppercase mb-1 inline-block">
+                        {patient.species}
+                      </span>
+                      <br />
+                      <span className="text-sm font-medium text-slate-700">{patient.breed}</span>
+                    </td>
+                    <td className="px-6 py-5 text-sm text-slate-600 font-medium">
+                      {patient.age} {patient.age === 1 ? 'año' : 'años'}
+                    </td>
+                    <td className="px-6 py-5 text-sm text-slate-700 font-semibold">{patient.ownerName}</td>
+                    <td className="px-6 py-5">
+                      {patient.status === 'active' ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-teal-100 text-teal-800 text-[10px] font-black rounded-full">
+                          <span className="w-1.5 h-1.5 rounded-full bg-teal-600" />
+                          ACTIVO
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-container-high text-slate-500 text-[10px] font-black rounded-full">
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                          INACTIVO
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-5 text-right">
+                      <Link
+                        to={`/patients/${patient.id}`}
+                        className="bg-primary-container/10 hover:bg-primary-container text-primary hover:text-on-primary-container px-4 py-2 rounded-lg text-xs font-bold transition-all inline-block"
+                      >
+                        Ver Historial
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {filtered.length > 0 && (
+          <div className="px-6 py-4 bg-surface-container-low">
+            <p className="text-xs text-slate-500 font-medium">
+              Mostrando <span className="text-slate-900">{filtered.length}</span> de{' '}
+              <span className="text-slate-900">{patients.length}</span> pacientes
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Create Patient Modal */}
+      {showModal && (
+        <CreatePatientModal
+          onClose={() => setShowModal(false)}
+          onCreated={() => { setShowModal(false); loadPatients(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function CreatePatientModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const { user } = useAuth();
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState<PatientInput>({
+    name: '',
+    species: 'Perro',
+    breed: '',
+    age: 0,
+    weight: undefined,
+    sex: 'male',
+    neutered: false,
+    microchip: '',
+    imageUrl: '',
+    ownerId: user?.uid || '',
+    ownerName: user?.displayName || '',
+    status: 'active',
+    notes: '',
+  });
+
+  const set = (field: keyof PatientInput, value: string | number | boolean) =>
+    setForm((prev) => ({ ...prev, [field]: value }));
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!form.name || !form.species || !form.breed) return;
+    setSaving(true);
+    try {
+      await createPatient(form);
+      onCreated();
+    } catch (err) {
+      console.error('Error creating patient:', err);
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-6 border-b border-slate-100">
+          <h2 className="font-headline font-bold text-xl text-teal-900">Nuevo Paciente</h2>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+            <X className="w-5 h-5 text-slate-500" />
+          </button>
         </div>
 
-        {/* Pagination Footer */}
-        <div className="px-6 py-4 bg-surface-container-low flex items-center justify-between">
-          <p className="text-xs text-slate-500 font-medium">Mostrando <span className="text-slate-900">1-4</span> de <span className="text-slate-900">248</span> pacientes</p>
-          <div className="flex gap-1">
-            <button className="p-2 rounded-md hover:bg-slate-200 transition-colors text-slate-400 disabled:opacity-30" disabled>
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button className="w-8 h-8 rounded-md bg-primary text-on-primary text-xs font-bold">1</button>
-            <button className="w-8 h-8 rounded-md hover:bg-slate-200 text-xs font-bold text-slate-600 transition-colors">2</button>
-            <button className="w-8 h-8 rounded-md hover:bg-slate-200 text-xs font-bold text-slate-600 transition-colors">3</button>
-            <button className="p-2 rounded-md hover:bg-slate-200 transition-colors text-slate-600">
-              <ChevronRight className="w-4 h-4" />
-            </button>
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          {/* Name */}
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Nombre de la mascota *</label>
+            <input
+              type="text"
+              required
+              value={form.name}
+              onChange={(e) => set('name', e.target.value)}
+              placeholder="Ej: Cooper"
+              className="w-full bg-surface-container-high rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary border-none"
+            />
           </div>
-        </div>
+
+          {/* Species + Breed */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Especie *</label>
+              <select
+                value={form.species}
+                onChange={(e) => set('species', e.target.value)}
+                className="w-full bg-surface-container-high rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-primary border-none cursor-pointer"
+              >
+                <option>Perro</option>
+                <option>Gato</option>
+                <option>Ave</option>
+                <option>Reptil</option>
+                <option>Equino</option>
+                <option>Otro</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Raza *</label>
+              <input
+                type="text"
+                required
+                value={form.breed}
+                onChange={(e) => set('breed', e.target.value)}
+                placeholder="Ej: Golden Retriever"
+                className="w-full bg-surface-container-high rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary border-none"
+              />
+            </div>
+          </div>
+
+          {/* Age + Weight */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Edad (años)</label>
+              <input
+                type="number"
+                min={0}
+                value={form.age || ''}
+                onChange={(e) => set('age', Number(e.target.value))}
+                className="w-full bg-surface-container-high rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary border-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Peso (kg)</label>
+              <input
+                type="number"
+                min={0}
+                step={0.1}
+                value={form.weight || ''}
+                onChange={(e) => set('weight', Number(e.target.value))}
+                className="w-full bg-surface-container-high rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary border-none"
+              />
+            </div>
+          </div>
+
+          {/* Sex + Neutered */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Sexo</label>
+              <select
+                value={form.sex}
+                onChange={(e) => set('sex', e.target.value)}
+                className="w-full bg-surface-container-high rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-primary border-none cursor-pointer"
+              >
+                <option value="male">Macho</option>
+                <option value="female">Hembra</option>
+              </select>
+            </div>
+            <div className="flex items-end pb-1">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.neutered}
+                  onChange={(e) => set('neutered', e.target.checked)}
+                  className="w-4 h-4 rounded accent-primary"
+                />
+                <span className="text-sm font-medium text-slate-700">Esterilizado</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Owner Name */}
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Nombre del propietario</label>
+            <input
+              type="text"
+              value={form.ownerName}
+              onChange={(e) => set('ownerName', e.target.value)}
+              className="w-full bg-surface-container-high rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary border-none"
+            />
+          </div>
+
+          {/* Microchip */}
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Microchip</label>
+            <input
+              type="text"
+              value={form.microchip}
+              onChange={(e) => set('microchip', e.target.value)}
+              placeholder="Opcional"
+              className="w-full bg-surface-container-high rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary border-none"
+            />
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Notas</label>
+            <textarea
+              value={form.notes}
+              onChange={(e) => set('notes', e.target.value)}
+              rows={2}
+              placeholder="Alergias, condiciones especiales, etc."
+              className="w-full bg-surface-container-high rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary border-none resize-none"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={saving}
+            className="w-full bg-primary text-on-primary font-bold py-3 rounded-xl transition-all active:scale-[0.98] disabled:opacity-50"
+          >
+            {saving ? 'Guardando...' : 'Registrar Paciente'}
+          </button>
+        </form>
       </div>
     </div>
   );
