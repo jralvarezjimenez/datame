@@ -67,5 +67,12 @@ service cloud.firestore {
       allow create: if isAuthenticated();
       allow update, delete: if isVeterinarianOrStaff();
     }
+
+    match /appointments/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isVeterinarianOrStaff();
+    }
   }
 }
