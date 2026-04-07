@@ -1,8 +1,9 @@
 import { useState, useEffect, type FormEvent } from 'react';
-import { Calendar as CalendarIcon, Clock, Plus, X, ChevronLeft, ChevronRight, CheckCircle2, XCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Plus, X, ChevronLeft, ChevronRight, CheckCircle2, XCircle, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getAllAppointments, getAppointmentsByOwner, createAppointment, updateAppointment, type Appointment, type AppointmentInput } from '../services/appointments';
+import { generateAppointmentReminder } from '../services/whatsapp';
 import { getAllPatients, getPatientsByOwner, type Patient } from '../services/patients';
 
 export function Agenda() {
@@ -126,6 +127,9 @@ export function Agenda() {
               </div>
               {appt.status === 'scheduled' && (
                 <div className="flex gap-2 shrink-0">
+                  <a href={generateAppointmentReminder(appt)} target="_blank" rel="noopener noreferrer" title="Recordatorio WhatsApp" className="p-2 rounded-lg hover:bg-green-50 text-green-600 transition-colors">
+                    <MessageCircle className="w-5 h-5" />
+                  </a>
                   <button onClick={() => markStatus(appt.id, 'completed')} title="Completar" className="p-2 rounded-lg hover:bg-emerald-50 text-emerald-600 transition-colors">
                     <CheckCircle2 className="w-5 h-5" />
                   </button>

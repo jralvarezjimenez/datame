@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, HeartPulse, Syringe, Stethoscope, FileText, Bone, PawPrint } from 'lucide-react';
+import { ArrowLeft, HeartPulse, Syringe, Stethoscope, FileText, Bone, PawPrint, Download } from 'lucide-react';
 import { getPatient, type Patient } from '../services/patients';
+import { getConsultations, getVaccinations, getPrescriptions } from '../services/clinical';
+import { generatePatientPDF } from '../services/pdfExport';
 
 export function PatientProfile() {
   const { id } = useParams<{ id: string }>();
   const [patient, setPatient] = useState<Patient | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -15,6 +18,23 @@ export function PatientProfile() {
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [id]);
+
+  async function handleExportPDF() {
+    if (!patient || !id) return;
+    setExporting(true);
+    try {
+      const [consultations, vaccinations, prescriptions] = await Promise.all([
+        getConsultations(id),
+        getVaccinations(id),
+        getPrescriptions(id),
+      ]);
+      generatePatientPDF(patient, consultations, vaccinations, prescriptions);
+    } catch (err) {
+      console.error('Error generating PDF:', err);
+    } finally {
+      setExporting(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -38,10 +58,18 @@ export function PatientProfile() {
     <div className="max-w-7xl mx-auto space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
-        <Link to="/patients" className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-primary transition-colors">
+        <Link to="/patients" className="inline-flex items-center gap-2 text-sm font-bold text-on-surface-variant hover:text-primary transition-colors">
           <ArrowLeft className="w-4 h-4" />
           Volver a Pacientes
         </Link>
+        <button
+          onClick={handleExportPDF}
+          disabled={exporting}
+          className="inline-flex items-center gap-2 bg-primary text-on-primary px-5 py-2.5 rounded-2xl font-bold text-sm clay-shadow-coral active:scale-95 transition-transform disabled:opacity-50"
+        >
+          <Download className="w-4 h-4" />
+          {exporting ? 'Generando...' : 'Exportar PDF'}
+        </button>
       </div>
 
       {/* Profile Card */}
