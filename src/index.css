@@ -6,14 +6,14 @@
   --font-body: "Inter", sans-serif;
   --font-label: "Inter", sans-serif;
 
-  --color-primary: #00685d;
+  --color-primary: #1a56db;
   --color-on-primary: #ffffff;
-  --color-primary-container: #008376;
-  --color-on-primary-container: #f4fffb;
-  --color-primary-fixed: #8df5e4;
-  --color-on-primary-fixed: #00201c;
-  --color-primary-fixed-dim: #70d8c8;
-  --color-on-primary-fixed-variant: #005048;
+  --color-primary-container: #3b6ff0;
+  --color-on-primary-container: #f0f4ff;
+  --color-primary-fixed: #d4e0ff;
+  --color-on-primary-fixed: #001a4d;
+  --color-primary-fixed-dim: #7aa3ff;
+  --color-on-primary-fixed-variant: #0d3fa8;
 
   --color-secondary: #4c56af;
   --color-on-secondary: #ffffff;
