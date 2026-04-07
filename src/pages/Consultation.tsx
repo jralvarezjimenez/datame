@@ -1,8 +1,10 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Plus, Stethoscope, X, Heart, Thermometer, Activity, Weight, Eye, Droplets, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Plus, Stethoscope, X, Heart, Thermometer, Activity, Weight, Eye, Droplets, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getConsultations, addConsultation, type Consultation as ConsultationType, type VitalSigns } from '../services/clinical';
+import { generateSOAP, isAIAvailable } from '../services/aiAssistant';
+import { getPatient } from '../services/patients';
 
 export function Consultation() {
   const { id } = useParams<{ id: string }>();
@@ -10,8 +12,14 @@ export function Consultation() {
   const [records, setRecords] = useState<ConsultationType[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [patientInfo, setPatientInfo] = useState<{ species: string; breed: string; age: number; weight?: number } | null>(null);
 
-  useEffect(() => { if (id) loadData(); }, [id]);
+  useEffect(() => {
+    if (id) {
+      loadData();
+      getPatient(id).then((p) => { if (p) setPatientInfo({ species: p.species, breed: p.breed, age: p.age, weight: p.weight }); });
+    }
+  }, [id]);
 
   async function loadData() {
     setLoading(true);
@@ -54,6 +62,7 @@ export function Consultation() {
         <SOAPForm
           patientId={id!}
           user={user!}
+          patientInfo={patientInfo}
           onClose={() => setShowForm(false)}
           onSaved={() => { setShowForm(false); loadData(); }}
         />
@@ -183,12 +192,19 @@ function VitalsDisplay({ vitals }: { vitals: VitalSigns }) {
 }
 
 /* ─── SOAP Form ─── */
-function SOAPForm({ patientId, user, onClose, onSaved }: {
-  patientId: string; user: { uid: string; displayName: string }; onClose: () => void; onSaved: () => void;
+function SOAPForm({ patientId, user, patientInfo, onClose, onSaved }: {
+  patientId: string;
+  user: { uid: string; displayName: string };
+  patientInfo: { species: string; breed: string; age: number; weight?: number } | null;
+  onClose: () => void;
+  onSaved: () => void;
 }) {
   const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [quickNotes, setQuickNotes] = useState('');
   const [step, setStep] = useState(0); // 0=info, 1=vitals, 2=SOAP
   const steps = ['Información', 'Signos Vitales', 'SOAP'];
+  const aiReady = isAIAvailable() && patientInfo !== null;
 
   const [form, setForm] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -199,6 +215,27 @@ function SOAPForm({ patientId, user, onClose, onSaved }: {
     plan: '',
     notes: '',
   });
+
+  async function handleAIGenerate() {
+    if (!patientInfo || !quickNotes.trim()) return;
+    setGenerating(true);
+    try {
+      const result = await generateSOAP({ ...patientInfo, quickNotes: quickNotes.trim() });
+      if (result) {
+        setForm((p) => ({
+          ...p,
+          subjective: result.subjective,
+          objective: result.objective,
+          assessment: result.assessment,
+          plan: result.plan,
+        }));
+        if (!form.reason) {
+          setForm((p) => ({ ...p, reason: quickNotes.trim().split('.')[0].slice(0, 80) }));
+        }
+      }
+    } catch (err) { console.error('AI error:', err); }
+    finally { setGenerating(false); }
+  }
 
   const [vitals, setVitals] = useState<VitalSigns>({
     weight: undefined, temperature: undefined, heartRate: undefined,
@@ -324,6 +361,34 @@ function SOAPForm({ patientId, user, onClose, onSaved }: {
           {/* Step 2: SOAP */}
           {step === 2 && (
             <>
+              {/* AI Assistant */}
+              {aiReady && (
+                <div className="bg-tertiary-container/20 rounded-2xl p-4 border border-tertiary/20">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Sparkles className="w-5 h-5 text-tertiary" />
+                    <span className="font-bold text-sm text-on-surface">Asistente IA</span>
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary">GEMINI</span>
+                  </div>
+                  <p className="text-xs text-on-surface-variant mb-3">Escribe notas rápidas y la IA generará el SOAP completo. Puedes editar después.</p>
+                  <textarea
+                    value={quickNotes}
+                    onChange={(e) => setQuickNotes(e.target.value)}
+                    rows={2}
+                    placeholder="Ej: Perro llega con vómitos desde hace 2 días, no come, decaído. A la palpación abdomen tenso..."
+                    className="w-full bg-surface-container-lowest rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-tertiary border-none resize-none mb-3"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAIGenerate}
+                    disabled={generating || !quickNotes.trim()}
+                    className="flex items-center gap-2 bg-tertiary text-on-tertiary px-5 py-2 rounded-xl font-bold text-sm clay-shadow-lavender active:scale-95 transition-transform disabled:opacity-50"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    {generating ? 'Generando SOAP...' : 'Generar con IA'}
+                  </button>
+                </div>
+              )}
+
               <div className="space-y-4">
                 <SOAPField letter="S" title="Subjetivo" subtitle="¿Qué reporta el propietario?" color="bg-primary/10 text-primary"
                   value={form.subjective} onChange={(v) => set('subjective', v)}
