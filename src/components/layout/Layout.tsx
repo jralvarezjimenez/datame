@@ -5,18 +5,13 @@ import { BottomNav } from './BottomNav';
 
 export function Layout() {
   const location = useLocation();
-  const isLogin = location.pathname === '/login';
-
-  if (isLogin) {
-    return <Outlet />;
-  }
 
   const getTitle = () => {
-    if (location.pathname === '/') return { title: 'DATA ME', subtitle: 'Panel del Profesional' };
+    if (location.pathname === '/dashboard') return { title: 'DATA ME', subtitle: 'Panel del Profesional' };
     if (location.pathname.startsWith('/patients')) return { title: 'Pacientes' };
     if (location.pathname.startsWith('/agenda')) return { title: 'Agenda' };
-    if (location.pathname.startsWith('/alerts')) return { title: 'Alertas y Recordatorios' };
-    if (location.pathname.startsWith('/portal')) return { title: 'Portal de Propietarios' };
+    if (location.pathname.startsWith('/alerts')) return { title: 'Alertas' };
+    if (location.pathname.startsWith('/portal')) return { title: 'Portal' };
     return { title: 'DATA ME' };
   };
 

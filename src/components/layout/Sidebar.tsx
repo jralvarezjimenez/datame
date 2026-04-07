@@ -1,10 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Calendar, Bell, UserCircle, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, Bell, UserCircle, LogOut, PawPrint } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../contexts/AuthContext';
 
 const navItems = [
-  { icon: LayoutDashboard, label: 'Panel', path: '/' },
+  { icon: LayoutDashboard, label: 'Panel', path: '/dashboard' },
   { icon: Users, label: 'Pacientes', path: '/patients' },
   { icon: Calendar, label: 'Agenda', path: '/agenda' },
   { icon: Bell, label: 'Alertas', path: '/alerts' },
@@ -22,40 +22,42 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="hidden md:flex flex-col fixed left-0 top-0 h-full p-4 w-64 bg-slate-50 border-r border-slate-200 z-50 overflow-y-auto no-scrollbar">
-      <div className="text-2xl font-black text-teal-800 mb-8 px-4 font-headline">DATA ME</div>
+    <aside className="hidden md:flex flex-col fixed left-0 top-0 h-full p-4 w-64 bg-surface-container-lowest border-r border-outline-variant/20 z-50 overflow-y-auto no-scrollbar">
+      {/* Logo */}
+      <div className="flex items-center gap-2.5 px-4 mb-8">
+        <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center clay-shadow-coral">
+          <PawPrint className="w-4.5 h-4.5 text-white" />
+        </div>
+        <span className="text-xl font-extrabold text-on-surface font-headline">DATA ME</span>
+      </div>
 
-      <div className="flex items-center gap-3 px-4 py-3 mb-8 bg-white rounded-xl shadow-sm">
+      {/* User card */}
+      <div className="flex items-center gap-3 px-4 py-3 mb-6 bg-primary-container/30 rounded-2xl">
         {user?.photoURL ? (
-          <img
-            src={user.photoURL}
-            alt={user.displayName}
-            className="w-10 h-10 rounded-full object-cover"
-            referrerPolicy="no-referrer"
-          />
+          <img src={user.photoURL} alt={user.displayName} className="w-10 h-10 rounded-xl object-cover" referrerPolicy="no-referrer" />
         ) : (
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+          <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary font-bold">
             {user?.displayName?.charAt(0) || '?'}
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <p className="font-headline text-sm font-bold text-teal-800 truncate">{user?.displayName || 'Usuario'}</p>
-          <p className="font-label text-xs text-slate-500">{roleLabel[user?.role || 'owner']}</p>
+          <p className="font-headline text-sm font-bold text-on-surface truncate">{user?.displayName || 'Usuario'}</p>
+          <p className="text-xs text-on-surface-variant font-medium">{roleLabel[user?.role || 'owner']}</p>
         </div>
       </div>
 
-      <nav className="flex flex-col gap-1 flex-1">
+      <nav className="flex flex-col gap-1.5 flex-1">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
+          const isActive = location.pathname === item.path || (item.path !== '/dashboard' && location.pathname.startsWith(item.path));
           return (
             <Link
               key={item.path}
               to={item.path}
               className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                "flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200",
                 isActive
-                  ? "bg-white text-teal-700 shadow-sm font-bold"
-                  : "text-slate-600 hover:text-teal-600 hover:bg-teal-50/50 font-medium"
+                  ? "bg-primary text-on-primary font-bold clay-shadow-coral"
+                  : "text-on-surface-variant hover:text-on-surface hover:bg-primary-container/20 font-medium"
               )}
             >
               <item.icon className="w-5 h-5" />
@@ -67,7 +69,7 @@ export function Sidebar() {
 
       <button
         onClick={logout}
-        className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition-all duration-200 mt-4"
+        className="flex items-center gap-3 px-4 py-3 rounded-2xl text-on-surface-variant hover:text-error hover:bg-error-container/30 transition-all duration-200 mt-4"
       >
         <LogOut className="w-5 h-5" />
         <span className="text-sm font-medium">Cerrar Sesión</span>

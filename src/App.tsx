@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Layout } from './components/layout/Layout';
+import { Landing } from './pages/Landing';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Patients } from './pages/Patients';
@@ -18,9 +19,13 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
+          {/* Public */}
+          <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
+
+          {/* Protected App */}
           <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/patients" element={<Patients />} />
             <Route path="/patients/:id" element={<PatientProfile />} />
             <Route path="/patients/:id/vaccinations" element={<Vaccination />} />
