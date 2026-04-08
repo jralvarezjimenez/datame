@@ -4,7 +4,6 @@ import {
   getDocs,
   query,
   where,
-  orderBy,
   serverTimestamp,
   type Timestamp,
 } from 'firebase/firestore';
@@ -56,13 +55,9 @@ export async function addConsultation(data: ConsultationInput): Promise<string> 
 }
 
 export async function getConsultations(patientId: string): Promise<Consultation[]> {
-  const q = query(
-    collection(db, 'consultations'),
-    where('patientId', '==', patientId),
-    orderBy('createdAt', 'desc')
-  );
+  const q = query(collection(db, 'consultations'), where('patientId', '==', patientId));
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Consultation);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Consultation).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 }
 
 // --- Vaccinations ---
@@ -89,11 +84,7 @@ export async function addVaccination(data: VaccinationInput): Promise<string> {
 }
 
 export async function getVaccinations(patientId: string): Promise<Vaccination[]> {
-  const q = query(
-    collection(db, 'vaccinations'),
-    where('patientId', '==', patientId),
-    orderBy('createdAt', 'desc')
-  );
+  const q = query(collection(db, 'vaccinations'), where('patientId', '==', patientId));
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Vaccination);
 }
@@ -124,11 +115,7 @@ export async function addPrescription(data: PrescriptionInput): Promise<string> 
 }
 
 export async function getPrescriptions(patientId: string): Promise<Prescription[]> {
-  const q = query(
-    collection(db, 'prescriptions'),
-    where('patientId', '==', patientId),
-    orderBy('createdAt', 'desc')
-  );
+  const q = query(collection(db, 'prescriptions'), where('patientId', '==', patientId));
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Prescription);
 }

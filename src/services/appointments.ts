@@ -7,7 +7,6 @@ import {
   deleteDoc,
   query,
   where,
-  orderBy,
   serverTimestamp,
   type Timestamp,
 } from 'firebase/firestore';
@@ -39,21 +38,20 @@ export async function createAppointment(data: AppointmentInput): Promise<string>
 }
 
 export async function getAppointmentsByDate(date: string): Promise<Appointment[]> {
-  const q = query(appointmentsRef, where('date', '==', date), orderBy('time', 'asc'));
+  const q = query(appointmentsRef, where('date', '==', date));
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Appointment);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Appointment).sort((a, b) => a.time.localeCompare(b.time));
 }
 
 export async function getAllAppointments(): Promise<Appointment[]> {
-  const q = query(appointmentsRef, orderBy('date', 'desc'), orderBy('time', 'asc'));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Appointment);
+  const snap = await getDocs(appointmentsRef);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Appointment).sort((a, b) => b.date.localeCompare(a.date) || a.time.localeCompare(b.time));
 }
 
 export async function getAppointmentsByOwner(ownerId: string): Promise<Appointment[]> {
-  const q = query(appointmentsRef, where('ownerId', '==', ownerId), orderBy('date', 'desc'));
+  const q = query(appointmentsRef, where('ownerId', '==', ownerId));
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Appointment);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Appointment).sort((a, b) => b.date.localeCompare(a.date));
 }
 
 export async function updateAppointment(id: string, data: Partial<AppointmentInput>): Promise<void> {

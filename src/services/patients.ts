@@ -8,7 +8,6 @@ import {
   deleteDoc,
   query,
   where,
-  orderBy,
   serverTimestamp,
   type Timestamp,
 } from 'firebase/firestore';
@@ -53,13 +52,12 @@ export async function getPatient(id: string): Promise<Patient | null> {
 }
 
 export async function getAllPatients(): Promise<Patient[]> {
-  const q = query(patientsRef, orderBy('createdAt', 'desc'));
-  const snap = await getDocs(q);
+  const snap = await getDocs(patientsRef);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Patient);
 }
 
 export async function getPatientsByOwner(ownerId: string): Promise<Patient[]> {
-  const q = query(patientsRef, where('ownerId', '==', ownerId), orderBy('createdAt', 'desc'));
+  const q = query(patientsRef, where('ownerId', '==', ownerId));
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Patient);
 }
