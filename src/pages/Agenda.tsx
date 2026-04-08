@@ -20,12 +20,13 @@ export function Agenda() {
     setLoading(true);
     try {
       const [appts, pts] = await Promise.all([
-        getAllAppointments(),
-        getAllPatients(),
+        getAllAppointments().catch((e) => { console.error('Appointments error:', e); return []; }),
+        getAllPatients().catch((e) => { console.error('Patients error:', e); return []; }),
       ]);
+      console.log('Loaded patients:', pts.length, 'appointments:', appts.length);
       setAppointments(appts);
       setPatients(pts);
-    } catch (err) { console.error(err); }
+    } catch (err) { console.error('LoadAll error:', err); }
     finally { setLoading(false); }
   }
 
