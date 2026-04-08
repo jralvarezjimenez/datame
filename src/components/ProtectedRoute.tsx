@@ -20,5 +20,10 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
+  // If user hasn't selected a role yet, send to role selection
+  if (!user.roleSelected && user.role === 'pending') {
+    return <Navigate to="/select-role" replace />;
+  }
+
   return <>{children}</>;
 }

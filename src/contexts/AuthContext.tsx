@@ -3,15 +3,18 @@ import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 
-export type UserRole = 'veterinarian' | 'staff' | 'owner';
+export type UserRole = 'veterinarian' | 'staff' | 'owner' | 'pending';
+export type AccountType = 'veterinarian' | 'clinic' | 'owner';
 
 interface UserProfile {
   uid: string;
   email: string;
   role: UserRole;
+  accountType?: AccountType;
   clinicId?: string;
   displayName: string;
   photoURL: string | null;
+  roleSelected: boolean;
 }
 
 interface AuthContextType {
@@ -19,6 +22,7 @@ interface AuthContextType {
   loading: boolean;
   logout: () => Promise<void>;
   isVetOrStaff: boolean;
+  isOwner: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,14 +42,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser({
             uid: firebaseUser.uid,
             email: firebaseUser.email || '',
-            role: (userData?.role as UserRole) || 'owner',
+            role: (userData?.role as UserRole) || 'pending',
+            accountType: userData?.accountType as AccountType | undefined,
             clinicId: userData?.clinicId,
             displayName: firebaseUser.displayName || firebaseUser.email || 'Usuario',
             photoURL: firebaseUser.photoURL,
+            roleSelected: userData?.roleSelected ?? false,
           });
         } catch (error) {
           console.error('Error fetching user profile:', error);
-          setUser(null);
+          // Still set basic user even if Firestore fails
+          setUser({
+            uid: firebaseUser.uid,
+            email: firebaseUser.email || '',
+            role: 'pending',
+            displayName: firebaseUser.displayName || firebaseUser.email || 'Usuario',
+            photoURL: firebaseUser.photoURL,
+            roleSelected: false,
+          });
         }
       } else {
         setUser(null);
@@ -62,9 +76,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const isVetOrStaff = user?.role === 'veterinarian' || user?.role === 'staff';
+  const isOwner = user?.role === 'owner';
 
   return (
-    <AuthContext.Provider value={{ user, loading, logout, isVetOrStaff }}>
+    <AuthContext.Provider value={{ user, loading, logout, isVetOrStaff, isOwner }}>
       {children}
     </AuthContext.Provider>
   );

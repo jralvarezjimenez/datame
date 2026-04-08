@@ -3,19 +3,28 @@ import { LayoutDashboard, Users, Calendar, Bell, Package, UserCircle, Settings, 
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../contexts/AuthContext';
 
-const navItems = [
+// Vet/Staff see full menu, Owners see limited portal
+const vetNav = [
   { icon: LayoutDashboard, label: 'Panel', path: '/dashboard' },
   { icon: Users, label: 'Pacientes', path: '/patients' },
   { icon: Calendar, label: 'Agenda', path: '/agenda' },
   { icon: Bell, label: 'Alertas', path: '/alerts' },
   { icon: Package, label: 'Inventario', path: '/inventory' },
   { icon: Settings, label: 'Ajustes', path: '/settings' },
-  { icon: UserCircle, label: 'Portal', path: '/portal' },
+];
+
+const ownerNav = [
+  { icon: LayoutDashboard, label: 'Inicio', path: '/dashboard' },
+  { icon: PawPrint, label: 'Mis Mascotas', path: '/portal' },
+  { icon: Calendar, label: 'Citas', path: '/agenda' },
+  { icon: Bell, label: 'Alertas', path: '/alerts' },
+  { icon: Settings, label: 'Ajustes', path: '/settings' },
 ];
 
 export function Sidebar() {
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout, isOwner } = useAuth();
+  const navItems = isOwner ? ownerNav : vetNav;
 
   const roleLabel: Record<string, string> = {
     veterinarian: 'Veterinario',

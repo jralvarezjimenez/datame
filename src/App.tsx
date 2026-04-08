@@ -4,6 +4,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { Layout } from './components/layout/Layout';
 import { Landing } from './pages/Landing';
 import { Login } from './pages/Login';
+import { RoleSelect } from './pages/RoleSelect';
 import { Dashboard } from './pages/Dashboard';
 import { Patients } from './pages/Patients';
 import { PatientProfile } from './pages/PatientProfile';
@@ -24,6 +25,7 @@ export default function App() {
           {/* Public */}
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/select-role" element={<RoleSelect />} />
 
           {/* Protected App */}
           <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
