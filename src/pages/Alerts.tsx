@@ -24,8 +24,8 @@ export function Alerts() {
     setLoading(true);
     try {
       const [patients, appointments] = await Promise.all([
-        getAllPatients(),
-        getAllAppointments(),
+        getPatientsByOwner(user!.uid),
+        getAppointmentsByOwner(user!.uid),
       ]);
 
       const generated: Alert[] = [];
