@@ -132,10 +132,28 @@ export function PatientProfile() {
         </div>
       )}
 
-      {/* Clinical Actions */}
-      <h2 className="text-xl font-bold font-headline text-teal-900 pt-4">Registros Clínicos</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <ClinicalCard to={`/patients/${id}/consultation`} icon={Stethoscope} title="Consultas" desc="Ver historial y añadir notas" color="primary" />
+      {/* Main CTA - Historia Clínica */}
+      <Link
+        to={`/patients/${id}/consultation`}
+        className="block bg-gradient-to-r from-primary to-[#FF8E8E] p-6 rounded-3xl clay-shadow-coral hover:scale-[1.01] transition-transform"
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center">
+            <Stethoscope className="w-7 h-7 text-white" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-headline font-bold text-xl text-white">Historia Clínica SOAP</h3>
+            <p className="text-white/80 text-sm">Registrar nueva consulta o ver historial médico</p>
+          </div>
+          <div className="bg-white/20 px-4 py-2 rounded-2xl">
+            <span className="text-white font-bold text-sm">Abrir →</span>
+          </div>
+        </div>
+      </Link>
+
+      {/* Other Clinical Actions */}
+      <h2 className="text-xl font-bold font-headline text-teal-900 pt-2">Otros Registros</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <ClinicalCard to={`/patients/${id}/vaccinations`} icon={Syringe} title="Vacunaciones" desc="Registrar inmunizaciones" color="secondary" />
         <ClinicalCard to={`/patients/${id}/prescription`} icon={FileText} title="Recetas" desc="Gestionar medicamentos" color="tertiary" />
         <div className="group bg-surface-container-lowest p-6 rounded-2xl shadow-sm hover:shadow-md border border-outline-variant/15 transition-all flex flex-col items-center text-center gap-4 opacity-50">

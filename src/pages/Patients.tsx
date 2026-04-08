@@ -175,12 +175,20 @@ export function Patients() {
                       )}
                     </td>
                     <td className="px-6 py-5 text-right">
-                      <Link
-                        to={`/patients/${patient.id}`}
-                        className="bg-primary-container/10 hover:bg-primary-container text-primary hover:text-on-primary-container px-4 py-2 rounded-lg text-xs font-bold transition-all inline-block"
-                      >
-                        Ver Historial
-                      </Link>
+                      <div className="flex gap-2 justify-end">
+                        <Link
+                          to={`/patients/${patient.id}/consultation`}
+                          className="bg-primary text-on-primary px-4 py-2 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1.5 active:scale-95"
+                        >
+                          + Historia Clínica
+                        </Link>
+                        <Link
+                          to={`/patients/${patient.id}`}
+                          className="bg-surface-container-high text-on-surface-variant px-3 py-2 rounded-lg text-xs font-bold transition-all inline-block hover:bg-surface-container-highest"
+                        >
+                          Perfil
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}
