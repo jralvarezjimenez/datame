@@ -1,15 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, HeartPulse, Syringe, Stethoscope, FileText, Bone, PawPrint, Download } from 'lucide-react';
+import { ArrowLeft, HeartPulse, Syringe, Stethoscope, FileText, Bone, PawPrint, Download, MessageCircle, Mail, Share2, X } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import { getPatient, type Patient } from '../services/patients';
 import { getConsultations, getVaccinations, getPrescriptions } from '../services/clinical';
 import { generatePatientPDF } from '../services/pdfExport';
+import { createInvitation, generateWhatsAppInvite, generateEmailInvite } from '../services/invitations';
 
 export function PatientProfile() {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const [patient, setPatient] = useState<Patient | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [showInvite, setShowInvite] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -62,14 +66,23 @@ export function PatientProfile() {
           <ArrowLeft className="w-4 h-4" />
           Volver a Pacientes
         </Link>
-        <button
-          onClick={handleExportPDF}
-          disabled={exporting}
-          className="inline-flex items-center gap-2 bg-primary text-on-primary px-5 py-2.5 rounded-2xl font-bold text-sm clay-shadow-coral active:scale-95 transition-transform disabled:opacity-50"
-        >
-          <Download className="w-4 h-4" />
-          {exporting ? 'Generando...' : 'Exportar PDF'}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowInvite(true)}
+            className="inline-flex items-center gap-2 bg-secondary text-on-secondary px-5 py-2.5 rounded-2xl font-bold text-sm clay-shadow-mint active:scale-95 transition-transform"
+          >
+            <Share2 className="w-4 h-4" />
+            Invitar Dueño
+          </button>
+          <button
+            onClick={handleExportPDF}
+            disabled={exporting}
+            className="inline-flex items-center gap-2 bg-primary text-on-primary px-5 py-2.5 rounded-2xl font-bold text-sm clay-shadow-coral active:scale-95 transition-transform disabled:opacity-50"
+          >
+            <Download className="w-4 h-4" />
+            {exporting ? 'Generando...' : 'PDF'}
+          </button>
+        </div>
       </div>
 
       {/* Profile Card */}
@@ -164,6 +177,96 @@ export function PatientProfile() {
             <h3 className="font-bold text-slate-800 mb-1">Lab (Próximamente)</h3>
             <p className="text-xs text-slate-500">Análisis y diagnósticos</p>
           </div>
+        </div>
+      </div>
+
+      {/* Invite Owner Modal */}
+      {showInvite && patient && user && (
+        <InviteOwnerModal patient={patient} user={user} onClose={() => setShowInvite(false)} />
+      )}
+    </div>
+  );
+}
+
+function InviteOwnerModal({ patient, user, onClose }: {
+  patient: Patient; user: { uid: string; displayName: string }; onClose: () => void;
+}) {
+  const [sending, setSending] = useState(false);
+  const [invitation, setInvitation] = useState<{ code: string; whatsappLink: string; emailLink: string } | null>(null);
+
+  async function handleGenerate() {
+    setSending(true);
+    try {
+      const inv = await createInvitation({
+        patientId: patient.id,
+        patientName: patient.name,
+        invitedBy: user.uid,
+        invitedByName: user.displayName,
+      });
+      const whatsappLink = generateWhatsAppInvite(inv);
+      const emailData = generateEmailInvite(inv);
+      const emailLink = `mailto:?subject=${encodeURIComponent(emailData.subject)}&body=${encodeURIComponent(emailData.body)}`;
+      setInvitation({ code: inv.code, whatsappLink, emailLink });
+    } catch (err) { console.error(err); }
+    finally { setSending(false); }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-surface-container-lowest rounded-3xl shadow-2xl w-full max-w-md clay-shadow" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-6 border-b border-outline-variant/15">
+          <h2 className="font-headline font-bold text-xl text-on-surface">Invitar Dueño</h2>
+          <button onClick={onClose} className="p-2 hover:bg-surface-container-high rounded-xl"><X className="w-5 h-5 text-on-surface-variant" /></button>
+        </div>
+
+        <div className="p-6">
+          {!invitation ? (
+            <div className="text-center">
+              <Share2 className="w-12 h-12 text-secondary mx-auto mb-4" />
+              <p className="text-on-surface font-bold mb-2">Vincula al dueño de {patient.name}</p>
+              <p className="text-sm text-on-surface-variant mb-6">
+                Se generará un código único que el dueño usará para vincular su cuenta y ver la historia clínica de su mascota.
+              </p>
+              <button
+                onClick={handleGenerate}
+                disabled={sending}
+                className="w-full bg-secondary text-on-secondary font-bold py-3 rounded-2xl clay-shadow-mint active:scale-[0.98] disabled:opacity-50 transition-transform"
+              >
+                {sending ? 'Generando...' : 'Generar Invitación'}
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Code display */}
+              <div className="bg-secondary/5 border border-secondary/20 rounded-2xl p-4 text-center">
+                <p className="text-xs text-on-surface-variant font-bold uppercase mb-1">Código de acceso</p>
+                <p className="font-headline text-3xl font-extrabold text-secondary tracking-widest">{invitation.code}</p>
+              </div>
+
+              {/* Share buttons */}
+              <a
+                href={invitation.whatsappLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center justify-center gap-3 bg-[#25D366] text-white font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-transform"
+              >
+                <MessageCircle className="w-5 h-5" />
+                Enviar por WhatsApp
+              </a>
+
+              <a
+                href={invitation.emailLink}
+                className="w-full flex items-center justify-center gap-3 bg-primary text-on-primary font-bold py-3.5 rounded-2xl clay-shadow-coral active:scale-[0.98] transition-transform"
+              >
+                <Mail className="w-5 h-5" />
+                Enviar por Email
+              </a>
+
+              <p className="text-xs text-center text-on-surface-variant">
+                El dueño recibirá un link para ingresar con Google y vincular a {patient.name} a su cuenta.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
