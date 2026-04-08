@@ -32,8 +32,8 @@ export function Dashboard() {
       const userDoc = await getDoc(doc(db, 'users', user!.uid));
       if (!userDoc.data()?.onboardingComplete) setShowOnboarding(true);
 
-      const pts = isVetOrStaff ? await getAllPatients() : await getPatientsByOwner(user!.uid);
-      const appts = isVetOrStaff ? await getAllAppointments() : await getAppointmentsByOwner(user!.uid);
+      const pts = await getAllPatients();
+      const appts = await getAllAppointments();
       setPatients(pts);
       setAppointments(appts);
 

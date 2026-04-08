@@ -20,9 +20,7 @@ export function Patients() {
     if (!user) return;
     setLoading(true);
     try {
-      const data = isVetOrStaff
-        ? await getAllPatients()
-        : await getPatientsByOwner(user.uid);
+      const data = await getAllPatients();
       setPatients(data);
     } catch (err) {
       console.error('Error loading patients:', err);

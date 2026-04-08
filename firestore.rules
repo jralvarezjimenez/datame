@@ -43,9 +43,9 @@ service cloud.firestore {
     //   - ownerId: string (required)
 
     match /patients/{patientId} {
-      allow read: if isVeterinarianOrStaff() || (isAuthenticated() && resource.data.ownerId == request.auth.uid);
-      allow create: if isVeterinarianOrStaff() || (isAuthenticated() && request.resource.data.ownerId == request.auth.uid);
-      allow update: if isVeterinarianOrStaff() || (isAuthenticated() && resource.data.ownerId == request.auth.uid && request.resource.data.ownerId == resource.data.ownerId);
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
       allow delete: if isVeterinarianOrStaff();
     }
 

@@ -21,7 +21,10 @@ export function Login() {
       const userRef = doc(db, 'users', u.uid);
       const userSnap = await getDoc(userRef);
       if (!userSnap.exists()) {
-        await setDoc(userRef, { email: u.email, role: 'owner' });
+        await setDoc(userRef, { email: u.email, role: 'veterinarian' });
+      } else if (userSnap.data()?.role === 'owner') {
+        // Upgrade existing owners to veterinarian (early adopters are clinic staff)
+        await setDoc(userRef, { ...userSnap.data(), role: 'veterinarian' }, { merge: true });
       }
       navigate('/dashboard');
     } catch (error) {

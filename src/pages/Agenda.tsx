@@ -20,8 +20,8 @@ export function Agenda() {
     setLoading(true);
     try {
       const [appts, pts] = await Promise.all([
-        isVetOrStaff ? getAllAppointments() : getAppointmentsByOwner(user!.uid),
-        isVetOrStaff ? getAllPatients() : getPatientsByOwner(user!.uid),
+        getAllAppointments(),
+        getAllPatients(),
       ]);
       setAppointments(appts);
       setPatients(pts);
